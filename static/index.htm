@@ -75,8 +75,6 @@
             //////////////////////////////////////////CREATING SEVERAL GRAPHS//////////////////////////////////////////
             //Loop to display several graphs and labels
             for (num = 1; num <= numGraphs; num++) {
-
-                console.log(num)
                 const graphContainer = d3.select("#graph-container")
                 const graph = graphContainer.append("svg")
                     .attr("width", width - margin.right - margin.left)
