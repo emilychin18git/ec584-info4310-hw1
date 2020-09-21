@@ -1,8 +1,201 @@
 <html>
-    <head>
 
-    </head>
-    <body>
-        <h1>its working1</h1>
-    </body>
+<head>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/topojson.v2.min.js"></script>
+    <style>
+        #key-container {
+            display: flex;
+            text-align: center;
+        }
+        #key {
+            margin: auto;
+        }
+        .title {
+            text-align:center;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 class="title">Trees In San Francisco Throughout The Decades</h1>
+    <p class="title">Once trees were planted, where would the next decade of trees be planted? View the slow growth of threes throughout the</p>
+        <div id="key-container"><svg id="key"></svg></div>
+        <div id="graph-container">
+    </div>
+
+
+    <script>
+        const loadMaps = async () => {
+
+            //establish graph&SVG information
+            const width = 400;
+            const height = 500;
+            const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+
+            //**wanted the data to be changeable
+            const dateRangePerGraph = 10;
+
+
+
+            ///////////
+            //Get Graph Data
+            const sf = await d3.json("SF-Neighborhoods.geo.json");
+
+            var neighborhoods = topojson.feature(sf, sf.objects.SFNeighborhoods);
+            var projection = d3.geoMercator().fitSize([width, height], neighborhoods);
+            var path = d3.geoPath().projection(projection);
+
+
+            ///////////
+            //Get Tree Data
+            var treeData = await d3.csv("Street_Tree_List-2020-08-20_RAW.csv");
+            //Filter out trees without a plant date
+            treeData = treeData.filter((d) => {
+                return (
+                    d.PlantDate != "");
+            });
+
+            //Find year, turn to number
+            treeData.forEach((d, i) => {
+                d.PlantYear = Number(String(d.PlantDate).substring(6, 10));
+                d.Position = projection([d.Longitude, d.Latitude]);
+            })
+
+            //Plant range, just to know how to divide the years
+            let yearRange = d3.extent(treeData, (d) => { return d["PlantYear"]; });
+            let earliest = yearRange[0];
+            let latest = yearRange[1];
+
+            let range = latest - earliest;
+            let numGraphs = Math.ceil(range / dateRangePerGraph)
+
+            // numGraphs = 1;
+
+            //////////////
+            //Loop to display several graphs and labels
+            for (num = 1; num <= numGraphs; num++) {
+
+                console.log(num)
+                const graphContainer = d3.select("#graph-container")
+                const graph = graphContainer.append("svg")
+                    .attr("width", width - margin.right - margin.left)
+                    .attr("height", height - margin.top - margin.bottom);
+                const mapPartBackground = graph.append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                const mapPartNew = graph.append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        
+            //draw the map part
+            mapPartBackground.selectAll("path.neighborhood").data(neighborhoods.features)
+                .join("path")
+                .attr("class", "neighborhood")
+                .attr("d", path);
+
+                console.log(earliest+(num*10-10))
+                console.log(earliest+(num*10))
+
+            //get subsection of "existing" trees from prior decate
+            var treeDateSectionExisting = treeData.filter((d) => {
+                return (
+                    (d.PlantYear >= earliest
+                        && d.PlantYear <= (earliest+((num-1)*10))
+                    ))
+            });
+
+            //get subsection of "latest" decade
+            var treeDateSectionLatest = treeData.filter((d) => {
+                return (
+                    (d.PlantYear >= (earliest+(num*10-10))
+                        && d.PlantYear <= (earliest+(num*10))
+                    ))
+            });
+            
+            //draw circles per trees in past
+            mapPartBackground.selectAll("circle").data(treeDateSectionExisting)
+                .join("circle")
+                .attr("r", 1)
+                .attr("fill", "darkgreen")
+                .attr("opacity", 0.6)
+                .attr("cx", d => d.Position[0])
+                .attr("cy", d => d.Position[1]);
+
+            //draw circles per trees in the most "recent" decade
+            mapPartNew.selectAll("circle").data(treeDateSectionLatest)
+                .join("circle")
+                .attr("r", 1)
+                .attr("fill", "hotpink")
+                .attr("opacity", 0.25)
+                .attr("cx", d => d.Position[0])
+                .attr("cy", d => d.Position[1]);
+
+            const label = graph.append('text')
+
+            //Add year labels
+            if ((earliest + (num*10)) < latest ) {
+                label.text((earliest+num*10-10) + " - " + (earliest + (num*10)))
+            } else {
+                label.text((earliest+num*10-10) + " - " + latest + " (Only 5 years)")
+            }
+            
+            
+            label.attr("x", 200)
+                .attr("y", 100)
+                .style("text-anchor", "middle")
+                .style("font-size", 24)
+                .style("font-weight", "bold")
+
+
+            graph.style("padding", 10)
+
+            
+
+        }
+
+
+        //create a key for the graphs
+        const keySVG = d3.select("#key")
+            keySVG.attr("width", 300)
+                .attr("height", 60)
+                
+         const key = keySVG.append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+            key.append('rect')
+                .attr("height", 20)
+                .attr("width", 20)
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("fill", "darkgreen")
+                .attr("opacity", 0.6)
+            key.append("text")
+                .text("Pre-existing trees")
+                .attr("x", 22)
+                .attr("y", 15)
+                .attr("text-anchor", "start")
+                .style("color", "black")
+            key.append('rect')
+                .attr("height", 20)
+                .attr("width", 20)
+                .attr("x", 0)
+                .attr("y", 30)
+                .attr("fill", "hotpink")
+                .attr("opacity", 0.6)
+            key.append("text")
+                .text("Trees planted from the given decade")
+                .attr("x", 22)
+                .attr("y", 45)
+                .attr("text-anchor", "start")
+                .style("color", "black")
+        }
+
+
+
+        loadMaps();
+
+
+
+    </script>
+</body>
+
 </html>
