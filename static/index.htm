@@ -19,7 +19,7 @@
 
 <body>
     <h1 class="title">Trees In San Francisco Throughout The Decades</h1>
-    <p class="title">Once trees were planted, where would the next decade of trees be planted? View the slow growth of threes throughout the</p>
+    <p class="title">The slow progression of new trees in San Francisco. Discover where and when trees were planted.</p>
         <div id="key-container"><svg id="key"></svg></div>
         <div id="graph-container">
     </div>
@@ -28,17 +28,17 @@
     <script>
         const loadMaps = async () => {
 
+            //////////////////////////////////////////GRAPH VARIABLES//////////////////////////////////////////
             //establish graph&SVG information
             const width = 400;
             const height = 500;
             const margin = { top: 10, right: 10, bottom: 10, left: 10 };
 
-            //**wanted the data to be changeable
+            //wanted the date range to be changeable
             const dateRangePerGraph = 10;
 
 
-
-            ///////////
+            //////////////////////////////////////////MAP DATA PROCESSING//////////////////////////////////////////
             //Get Graph Data
             const sf = await d3.json("SF-Neighborhoods.geo.json");
 
@@ -47,14 +47,18 @@
             var path = d3.geoPath().projection(projection);
 
 
-            ///////////
+            //////////////////////////////////////////TREE DATA PROCESSING//////////////////////////////////////////
             //Get Tree Data
             var treeData = await d3.csv("Street_Tree_List-2020-08-20_RAW.csv");
             //Filter out trees without a plant date
+            console.log(treeData)
             treeData = treeData.filter((d) => {
                 return (
-                    d.PlantDate != "");
+                    d.PlantDate != "",
+                    d.Longitude != "", 
+                    d.Latitude != "");
             });
+            console.log(treeData)
 
             //Find year, turn to number
             treeData.forEach((d, i) => {
@@ -62,6 +66,7 @@
                 d.Position = projection([d.Longitude, d.Latitude]);
             })
 
+            //////////////////////////////////////////DATA VARIABLES//////////////////////////////////////////
             //Plant range, just to know how to divide the years
             let yearRange = d3.extent(treeData, (d) => { return d["PlantYear"]; });
             let earliest = yearRange[0];
@@ -70,9 +75,8 @@
             let range = latest - earliest;
             let numGraphs = Math.ceil(range / dateRangePerGraph)
 
-            // numGraphs = 1;
 
-            //////////////
+            //////////////////////////////////////////CREATING SEVERAL GRAPHS//////////////////////////////////////////
             //Loop to display several graphs and labels
             for (num = 1; num <= numGraphs; num++) {
 
@@ -87,7 +91,7 @@
                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
         
-            //draw the map part
+            //draw the map background
             mapPartBackground.selectAll("path.neighborhood").data(neighborhoods.features)
                 .join("path")
                 .attr("class", "neighborhood")
@@ -96,7 +100,7 @@
                 console.log(earliest+(num*10-10))
                 console.log(earliest+(num*10))
 
-            //get subsection of "existing" trees from prior decate
+            //get subsection of "existing" trees from prior decades
             var treeDateSectionExisting = treeData.filter((d) => {
                 return (
                     (d.PlantYear >= earliest
@@ -130,16 +134,14 @@
                 .attr("cx", d => d.Position[0])
                 .attr("cy", d => d.Position[1]);
 
-            const label = graph.append('text')
 
             //Add year labels
+            const label = graph.append('text')
             if ((earliest + (num*10)) < latest ) {
                 label.text((earliest+num*10-10) + " - " + (earliest + (num*10)))
             } else {
                 label.text((earliest+num*10-10) + " - " + latest + " (Only 5 years)")
             }
-            
-            
             label.attr("x", 200)
                 .attr("y", 100)
                 .style("text-anchor", "middle")
@@ -153,12 +155,13 @@
 
         }
 
-
-        //create a key for the graphs
+        //////////////////////////////////////////ADDING A COLOR KEY//////////////////////////////////////////
+        //create a key SVG
         const keySVG = d3.select("#key")
             keySVG.attr("width", 300)
                 .attr("height", 60)
-                
+        
+        //adding colors and labels
          const key = keySVG.append("g")
                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
             key.append('rect')
@@ -190,7 +193,7 @@
         }
 
 
-
+        //call function
         loadMaps();
 
 
