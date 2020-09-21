@@ -51,14 +51,13 @@
             //Get Tree Data
             var treeData = await d3.csv("Street_Tree_List-2020-08-20_RAW.csv");
             //Filter out trees without a plant date
-            console.log(treeData)
+
             treeData = treeData.filter((d) => {
                 return (
                     d.PlantDate != "",
                     d.Longitude != "", 
                     d.Latitude != "");
             });
-            console.log(treeData)
 
             //Find year, turn to number
             treeData.forEach((d, i) => {
@@ -80,7 +79,6 @@
             //Loop to display several graphs and labels
             for (num = 1; num <= numGraphs; num++) {
 
-                console.log(num)
                 const graphContainer = d3.select("#graph-container")
                 const graph = graphContainer.append("svg")
                     .attr("width", width - margin.right - margin.left)
@@ -96,9 +94,6 @@
                 .join("path")
                 .attr("class", "neighborhood")
                 .attr("d", path);
-
-                console.log(earliest+(num*10-10))
-                console.log(earliest+(num*10))
 
             //get subsection of "existing" trees from prior decades
             var treeDateSectionExisting = treeData.filter((d) => {
